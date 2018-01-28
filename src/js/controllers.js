@@ -131,7 +131,7 @@ angular.module('opentok-meet').controller('RoomCtrl', ['$scope', '$http', '$wind
     }
     $scope.p2p = roomData.p2p;
     $scope.room = roomData.room;
-    $scope.shareURL = baseURL === '/' ? $window.location.href : baseURL + roomData.room;
+    $scope.shareURL = $window.location.href;
 
     OTSession.init(roomData.apiKey, roomData.sessionId, roomData.token, function(err, session) {
       if (err) {
@@ -197,6 +197,11 @@ angular.module('opentok-meet').controller('RoomCtrl', ['$scope', '$http', '$wind
     $scope.$on('otWhiteboardUpdate', whiteboardUpdated);
     $scope.$on('otTextchatMessage', textChatMessage);
     $scope.publishing = true;
+  }).catch(function(err){
+    if (err && err.data) {
+      $scope.$broadcast('otError', {message: err.data.message});
+      return;
+    }
   });
 
   $scope.$on('changeZoom', function(event, expanded) {

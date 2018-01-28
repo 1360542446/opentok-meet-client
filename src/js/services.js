@@ -6,8 +6,6 @@ angular.module('opentok-meet').factory('RoomService', ['$http', 'baseURL', '$win
       getRoom: function() {
         return $http.get(baseURL + room).then(function(response) {
           return response.data;
-        }).catch(function(response) {
-          return response.data;
         });
       },
       changeRoom: function() {
