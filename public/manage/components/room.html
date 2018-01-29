@@ -6,26 +6,17 @@
         </div>
     </div>
 </div>
-<div class="table-responsive">
+<div id="grid-room" class="table-responsive">
     <table class="table table-striped table-sm">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Session ID</th>
+                <th data-column-id="name">Name</th>
+                <th data-column-id="sessionId">Session ID</th>
+                <th data-column-id="createTime">Create Time</th>
+                <th>Commands</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>ipsum</td>
-                <td>dolor</td>
-                <td>sit</td>
-            </tr>
-            <tr>
-                <td>ligula</td>
-                <td>in</td>
-                <td>libero</td>
-            </tr>
         </tbody>
     </table>
 </div>
@@ -55,20 +46,16 @@
 </div>
 <script>
     (function () {
+        var editTemplate = "<button title=\"edit\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"UserPageAPIs.edit('{{0}}')\"><span class=\"glyphicon glyphicon-pencil\"></span></button>";
+        var delTemplate = "<button title=\"delete\" type=\"button\" class=\"btn btn-xs btn-default command-delete\"  onclick=\"UserPageAPIs.del('{{0}}')\"><span class=\"glyphicon glyphicon-trash\"></span></button>";
         list();
 
         function list() {
-            var options = {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'default'
-            };
-
-            fetch(Config.serviceBasicUrl + '/room', options)
+            fetch(Config.serviceBasicUrl + '/room')
                 .then(res => res.json())
                 .catch(err => console.error('Error ' + err))
-                .then(res => {
-                    console.log(res);
+                .then(data => {
+                    Util.generateTabelHTML("grid-room", data, [editTemplate, delTemplate]);
                 });
         }
     })();

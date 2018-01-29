@@ -10,6 +10,8 @@ document.querySelector('#menu-bar ul>li').addEventListener('click', function(){
     loadPage(command.toLowerCase());
 });
 
+loadPage('room');
+
 function loadPage(pageName) {
     let mainEle = document.getElementById("content");
     mainEle.innerHTML = '';
