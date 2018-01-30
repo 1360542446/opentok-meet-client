@@ -19,8 +19,7 @@ window.Util = {
             tr += "<td>";
             if (commands) {
                 for (var i = 0; i < commands.length; i++) {
-                    //probably should rewrite this at some point
-                    tr += commands[i].replace("{{0}}", item.id).replace("{{1}}", item.secondaryId) + " ";
+                    tr += commands[i];
                 }
             }
             tr += "</td>";
@@ -56,5 +55,9 @@ window.Util = {
             }
         }
         return returnColumnValue;
+    },
+    truncateText: function (text, length) {
+        length = length || 30;
+        return text.length > length ? text.substring(0, length) + "..." : text;
     }
 }
