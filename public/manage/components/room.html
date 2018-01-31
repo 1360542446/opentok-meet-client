@@ -39,7 +39,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-primary" onclick="createRoom()">Save</button>
             </div>
         </div>
     </div>
@@ -98,6 +98,7 @@
     </div>
 </div>
 <script>
+    var roomServiceAPI = Config.serviceBasicUrl + '/room';
     var editTemplate = "<button title=\"edit\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"showRoomDetails(this)\"><i class=\"fa fa-pencil-square-o\" aria-hidden=\"true\"></i></button>";
     var copyRoomAccessUrlTemplate = "<button title=\"get url\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"getMeetAccessUrl(this)\"><i class=\"fa fa-link\" aria-hidden=\"true\"></i></i></button>";
     var currentRoomDetails = null;
@@ -105,7 +106,7 @@
     listRoom();
 
     function listRoom() {
-        doFetch(Config.serviceBasicUrl + '/room')
+        doFetch(roomServiceAPI)
             .catch(err => console.error('Error ' + err))
             .then(data => {
                 Util.generateTabelHTML("grid-room", data, [editTemplate], function (column, value, parent) {
@@ -116,6 +117,21 @@
                         return "<td>" + value + "</td>";
                     }
                 });
+            });
+    }
+
+    function createRoom() {
+        var room = $('#room-name').val();
+        doFetch(roomServiceAPI + '/createroom?room=' + room, {
+            method: 'POST', // or 'PUT'
+            body: JSON.stringify({}),
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            })
+        })
+            .catch(err => console.error('Error ' + err))
+            .then(()=>{
+                $('#new-room').modal('hide');
             });
     }
 
@@ -139,7 +155,7 @@
     function createToken() {
         let room = $('#room-detail-name').val();
         let userName = $('#room-detail-user').val();
-        doFetch(Config.serviceBasicUrl + '/room/generateToken?room=' + room + "&user=" + userName)
+        doFetch(roomServiceAPI + '/generateToken?room=' + room + "&user=" + userName)
             .catch(err => {
                 console.error(err);
             })
@@ -154,7 +170,7 @@
     }
 
     function getMeetAccessUrl(ele) {
-        if(currentRoomDetails){
+        if (currentRoomDetails) {
             let token = Util.getCurrentTrColumnValue(ele.parentNode.parentNode, 'token');
             let accessOptions = {
                 apiKey: currentRoomDetails.apiKey,
@@ -172,9 +188,9 @@
         }
     }
 
-    function doFetch(url) {
+    function doFetch(url, options = {}) {
         return new Promise((resolvd, reject) => {
-            fetch(url)
+            fetch(url, options)
                 .then(res => res.json())
                 .catch(reject)
                 .then(resolvd);
