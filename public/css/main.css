@@ -315,6 +315,7 @@ button:disabled {
     margin-left: -285px;
     transition: width 200ms, height 200ms ease;
     z-index: 97;
+    overflow: hidden;
 }
 
 #loader {

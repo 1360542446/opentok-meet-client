@@ -182,9 +182,9 @@
             let urlParamters = '';
             for (const key in accessOptions) {
                 urlParamters += '&'
-                urlParamters += key + '=' + accessOptions[key];
+                urlParamters += key + '=' + encodeURIComponent(accessOptions[key]);
             }
-            alert(urlParamters);
+            console.log(urlParamters);
         }
     }
 
