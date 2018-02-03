@@ -1,3 +1,8 @@
+<style type="text/css">
+    .alert.alert-primary {
+        word-wrap: break-word;
+    }
+</style>
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3">
     <h1 class="h2">Rooms</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
@@ -5,6 +10,10 @@
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#new-room">New</button>
         </div>
     </div>
+</div>
+<div class="form-group row">
+    <label for="message-text" class="col-sm-2 col-form-label ">Room Entry Point:</label>
+    <input type="text" class="col-sm-10 form-control" id="room-url" value="http://localhost:7000/room.html">
 </div>
 <div id="grid-room" class="table-responsive">
     <table class="table table-striped table-sm">
@@ -69,6 +78,15 @@
                         </div>
                     </div>
                 </form>
+                <form>
+                    <div class="form-group row">
+                        <label for="room-detail-user" class="col-sm-2 col-form-label">UserName</label>
+                        <div class="col-sm-7">
+                            <input type="text" class="form-control" id="room-detail-user">
+                        </div>
+                        <button type="button" class=" btn btn-primary mb-2" onclick="createToken()">Create New Token</button>
+                    </div>
+                </form>
                 <div id="grid-token" class="table-responsive">
                     <table class="table table-striped table-sm">
                         <thead>
@@ -84,26 +102,26 @@
                         </tbody>
                     </table>
                 </div>
-                <form>
-                    <div class="form-group row">
-                        <label for="room-detail-user" class="col-sm-3 col-form-label" style="text-align:right">UserName</label>
-                        <div class="col-sm-6">
-                            <input type="text" class="form-control" id="room-detail-user">
-                        </div>
-                        <button type="button" class="col-sm-3 btn btn-primary mb-2" onclick="createToken()">Create New Token</button>
-                    </div>
-                </form>
+                <div class="alert alert-primary" role="alert">
+                    Select any token item to get room access url.
+                </div>
             </div>
         </div>
     </div>
 </div>
 <script>
     var roomServiceAPI = Config.serviceBasicUrl + '/room';
-    var editTemplate = "<button title=\"edit\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"showRoomDetails(this)\"><i class=\"fa fa-pencil-square-o\" aria-hidden=\"true\"></i></button>";
-    var copyRoomAccessUrlTemplate = "<button title=\"get url\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"getMeetAccessUrl(this)\"><i class=\"fa fa-link\" aria-hidden=\"true\"></i></i></button>";
+    var editTemplate = "<button title=\"edit\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"showRoomDetails(this.parentNode.parentNode)\"><i class=\"fa fa-pencil-square-o\" aria-hidden=\"true\"></i></button>";
+    var copyRoomAccessUrlTemplate = "<button title=\"get url\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"getMeetAccessUrl(this.parentNode.parentNode)\"><i class=\"fa fa-link\" aria-hidden=\"true\"></i></i></button>";
     var currentRoomDetails = null;
 
     listRoom();
+
+    $('#grid-room').on('click', 'tr', (e) => showRoomDetails(e.currentTarget));
+    $('#grid-token').on('click', 'tr', (e) => getMeetAccessUrl(e.currentTarget));
+    $('#new-room').on('show.bs.modal', function () {
+        $('#room-name').val('');
+    })
 
     function listRoom() {
         doFetch(roomServiceAPI)
@@ -122,6 +140,9 @@
 
     function createRoom() {
         var room = $('#room-name').val();
+        if(!validator(room)){
+            return;
+        }
         doFetch(roomServiceAPI + '/createroom?room=' + room, {
             method: 'POST', // or 'PUT'
             body: JSON.stringify({}),
@@ -129,18 +150,18 @@
                 'Content-Type': 'application/json'
             })
         })
-            .catch(err => console.error('Error ' + err))
-            .then(()=>{
+            .catch(err => alert('Error ' + err && err.message))
+            .then(() => {
                 $('#new-room').modal('hide');
+                listRoom();
             });
     }
 
     function loadRoomDetails(room) {
         $('#room-detail-user').val('');
+        $('#room-detail .alert.alert-primary').text('');
+        $('#room-detail .alert.alert-primary').hide();
         doFetch(Config.serviceBasicUrl + '/room/getroom?room=' + room)
-            .catch(err => {
-                console.error(err);
-            })
             .then(data => {
                 currentRoomDetails = data;
                 $('#room-detail-name').val(data.name);
@@ -149,29 +170,31 @@
                     return `<td style="${column === 'token' ? "display:none" : ""}">${value}</td>`;
                 });
                 $('#room-detail').modal('show')
-            });
+            })
+            .catch(err => alert('Error ' + err && err.message));
     }
 
     function createToken() {
         let room = $('#room-detail-name').val();
         let userName = $('#room-detail-user').val();
+        if(!validator({room, userName})){
+            return;
+        }
         doFetch(roomServiceAPI + '/generateToken?room=' + room + "&user=" + userName)
-            .catch(err => {
-                console.error(err);
-            })
             .then(data => {
                 loadRoomDetails(room);
-            });
+            })
+            .catch(err => alert('Error ' + err && err.message))
     }
 
-    function showRoomDetails(ele) {
-        let room = Util.getCurrentTrColumnValue(ele.parentNode.parentNode, 'name');
+    function showRoomDetails(trEle) {
+        let room = Util.getCurrentTrColumnValue(trEle, 'name');
         loadRoomDetails(room);
     }
 
-    function getMeetAccessUrl(ele) {
+    function getMeetAccessUrl(trEle) {
         if (currentRoomDetails) {
-            let token = Util.getCurrentTrColumnValue(ele.parentNode.parentNode, 'token');
+            let token = Util.getCurrentTrColumnValue(trEle, 'token');
             let accessOptions = {
                 apiKey: currentRoomDetails.apiKey,
                 sessionId: currentRoomDetails.sessionId,
@@ -179,22 +202,86 @@
                 token
             }
 
-            let urlParamters = '';
-            for (const key in accessOptions) {
-                urlParamters += '&'
-                urlParamters += key + '=' + encodeURIComponent(accessOptions[key]);
-            }
-            console.log(urlParamters);
+            let roomUrl = $("#room-url").val() + '?' + serialize(accessOptions);
+            $('#room-detail .alert.alert-primary').text(roomUrl);
+            $('#room-detail .alert.alert-primary').show();
+            copyTextToClipboard(roomUrl);
         }
     }
 
     function doFetch(url, options = {}) {
+        let handleErrors = function (response) {
+            if (!response.ok) {
+                // throw Error(response.statusText);
+                throw response
+            }
+            return response;
+        }
         return new Promise((resolvd, reject) => {
             fetch(url, options)
-                .then(res => res.json())
-                .catch(reject)
-                .then(resolvd);
+                .then(response => {
+                    if (!response.ok) { throw response }
+                    return response.json();  //we only get here if there is no error
+                })
+                .then(resolvd)
+                .catch(err => {
+                    err.json().then(reject);
+                });
         })
+    }
+
+    function validator(obj){
+        let isValid = true;
+        if(!obj){
+            isValid = false;
+        }
+        if(typeof obj === 'obj'){
+            return obj.keys.every(k=>obj[k]);
+        }
+        if(!isValid){
+            alert("value can't be empty.");
+        }
+        return isValid;
+    }
+
+    function serialize(obj) {
+        var str = [];
+        for (var p in obj)
+            if (obj.hasOwnProperty(p)) {
+                str.push(encodeURIComponent(p) + "=" + encodeURIComponent(obj[p]));
+            }
+        return str.join("&");
+    }
+
+    function copyTextToClipboard(text) {
+        var textArea = document.createElement("textarea");
+        textArea.style.position = 'fixed';
+        textArea.style.top = 0;
+        textArea.style.left = 0;
+
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+
+        textArea.style.padding = 0;
+
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+
+        // Avoid flash of white box if rendered for any reason.
+        textArea.style.background = 'transparent';
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            var successful = document.execCommand('copy');
+            var msg = successful ? 'copy successful' : 'unsuccessful';
+            console.log(msg);
+        } catch (err) {
+            console.log('Oops, unable to copy');
+        }
+
+        document.body.removeChild(textArea);
     }
 
 //# sourceURL=manage/components/room.html
