@@ -150,11 +150,11 @@
                 'Content-Type': 'application/json'
             })
         })
-            .catch(err => alert('Error ' + err && err.message))
-            .then(() => {
-                $('#new-room').modal('hide');
-                listRoom();
-            });
+        .then(() => {
+            $('#new-room').modal('hide');
+            listRoom();
+        })
+        .catch(err => alert('Error ' + err && err.message))
     }
 
     function loadRoomDetails(room) {
@@ -235,8 +235,8 @@
         if(!obj){
             isValid = false;
         }
-        if(typeof obj === 'obj'){
-            return obj.keys.every(k=>obj[k]);
+        if(typeof obj === 'object'){
+            return Object.keys(obj).every(k=>obj[k]);;
         }
         if(!isValid){
             alert("value can't be empty.");
