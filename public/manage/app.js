@@ -1,5 +1,5 @@
 let Config = {
-    serviceBasicUrl: 'http://localhost:3000/api/'
+    serviceBasicUrl: 'http://13.115.205.215/api/'
 }
 
 document.querySelector('#menu-bar ul>li').addEventListener('click', function(){
