@@ -110,9 +110,11 @@
     </div>
 </div>
 <script>
-    var roomServiceAPI = Config.serviceBasicUrl + '/room';
-    var editTemplate = "<button title=\"edit\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"showRoomDetails(this.parentNode.parentNode)\"><i class=\"fa fa-pencil-square-o\" aria-hidden=\"true\"></i></button>";
-    var copyRoomAccessUrlTemplate = "<button title=\"get url\" type=\"button\" class=\"btn btn-xs btn-default command-edit\" onclick=\"getMeetAccessUrl(this.parentNode.parentNode)\"><i class=\"fa fa-link\" aria-hidden=\"true\"></i></i></button>";
+    var roomServiceAPI = Config.serviceBasicUrl + '/room/';
+    var editRoomTemplate = '&nbsp;<button type="button" class="btn btn-primary btn-sm" onclick="showRoomDetails(this.parentNode.parentNode)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>';
+    var deleteRoomTemplate = '&nbsp;<button type="button" class="btn btn-primary btn-sm" onclick="removeRoom(this.parentNode.parentNode)"><i class="fa fa-trash-o" aria-hidden="true"></i></button>';
+    var deleteTokenTemplate = '&nbsp;<button type="button" class="btn btn-primary btn-sm" onclick="removeToken(this.parentNode.parentNode)"><i class="fa fa-trash-o" aria-hidden="true"></i></button>';
+    var copyRoomAccessUrlTemplate = '&nbsp;<button title="get url" type="button" class="btn btn-primary btn-sm" onclick="getMeetAccessUrl(this.parentNode.parentNode)"><i class="fa fa-link" aria-hidden="true"></i></i></button>';
     var currentRoomDetails = null;
 
     listRoom();
@@ -127,7 +129,7 @@
         doFetch(roomServiceAPI)
             .catch(err => console.error('Error ' + err))
             .then(data => {
-                Util.generateTabelHTML("grid-room", data, [editTemplate], function (column, value, parent) {
+                Util.generateTabelHTML("grid-room", data, [editRoomTemplate, deleteRoomTemplate], function (column, value, parent) {
                     if (column != 'name') {
                         return "<td><span  data-toggle=\"tooltip\" title=\"" + value + "\">" + Util.truncateText(value) + "</span></td>";
                     }
@@ -140,47 +142,78 @@
 
     function createRoom() {
         var room = $('#room-name').val();
-        if(!validator(room)){
+        if (!validator(room)) {
             return;
         }
-        doFetch(roomServiceAPI + '/createroom?room=' + room, {
+        doFetch(roomServiceAPI, {
             method: 'POST', // or 'PUT'
-            body: JSON.stringify({}),
+            body: JSON.stringify({
+                room
+            }),
             headers: new Headers({
                 'Content-Type': 'application/json'
             })
         })
-        .then(() => {
-            $('#new-room').modal('hide');
-            listRoom();
-        })
-        .catch(err => alert('Error ' + err && err.message))
+            .then(() => {
+                $('#new-room').modal('hide');
+                listRoom();
+            })
+            .catch(err => alert('Error ' + err && err.message))
+    }
+
+    function removeRoom(trEle) {
+        let room = Util.getCurrentTrColumnValue(trEle, 'name');
+        doFetch(roomServiceAPI + '/' + room, { method: 'Delete' })
+            .then(listRoom)
+            .catch(err => alert('Error ' + err && err.message));
+        return false;
+    }
+
+    function removeToken(trEle) {
+        let room = $('#room-detail-name').val();
+        let token = Util.getCurrentTrColumnValue(trEle, 'token');
+        token = token.substring(token.length - 10); // only need to take last 10 charactors
+        doFetch(roomServiceAPI + '/' + room + '/token/' + token, { method: 'Delete' })
+            .then(() => { loadRoomDetails(room); })
+            .catch(err => alert('Error ' + err && err.message));
+        return false;
     }
 
     function loadRoomDetails(room) {
         $('#room-detail-user').val('');
         $('#room-detail .alert.alert-primary').text('');
         $('#room-detail .alert.alert-primary').hide();
-        doFetch(Config.serviceBasicUrl + '/room/getroom?room=' + room)
+        doFetch(roomServiceAPI + '/' + room)
             .then(data => {
                 currentRoomDetails = data;
                 $('#room-detail-name').val(data.name);
                 $('#room-detail-session-id').val(data.sessionId);
-                Util.generateTabelHTML("grid-token", data.tokens, [copyRoomAccessUrlTemplate], function (column, value, parent) {
+                Util.generateTabelHTML("grid-token", data.tokens, [copyRoomAccessUrlTemplate, deleteTokenTemplate], function (column, value, parent) {
                     return `<td style="${column === 'token' ? "display:none" : ""}">${value}</td>`;
                 });
                 $('#room-detail').modal('show')
             })
             .catch(err => alert('Error ' + err && err.message));
+        return false;
     }
 
     function createToken() {
         let room = $('#room-detail-name').val();
         let userName = $('#room-detail-user').val();
-        if(!validator({room, userName})){
+        let expireTime = ''
+        if (!validator({ room, userName })) {
             return;
         }
-        doFetch(roomServiceAPI + '/generateToken?room=' + room + "&user=" + userName)
+        doFetch(roomServiceAPI + '/' + room + '/generateToken', {
+            method: 'POST',
+            body: JSON.stringify({
+                user: userName,
+                expireTime
+            }),
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            })
+        })
             .then(data => {
                 loadRoomDetails(room);
             })
@@ -230,15 +263,15 @@
         })
     }
 
-    function validator(obj){
+    function validator(obj) {
         let isValid = true;
-        if(!obj){
+        if (!obj) {
             isValid = false;
         }
-        if(typeof obj === 'object'){
-            return Object.keys(obj).every(k=>obj[k]);;
+        if (typeof obj === 'object') {
+            return Object.keys(obj).every(k => obj[k]);;
         }
-        if(!isValid){
+        if (!isValid) {
             alert("value can't be empty.");
         }
         return isValid;
