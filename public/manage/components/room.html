@@ -117,16 +117,18 @@
     var copyRoomAccessUrlTemplate = '&nbsp;<button title="get url" type="button" class="btn btn-primary btn-sm" onclick="getMeetAccessUrl(this.parentNode.parentNode)"><i class="fa fa-link" aria-hidden="true"></i></i></button>';
     var currentRoomDetails = null;
 
+    Util.checkAuth();
+
     listRoom();
 
-    $('#grid-room').on('click', 'tr', (e) => showRoomDetails(e.currentTarget));
-    $('#grid-token').on('click', 'tr', (e) => getMeetAccessUrl(e.currentTarget));
+    // $('#grid-room').on('click', 'tr', (e) => showRoomDetails(e.currentTarget));
+    // $('#grid-token').on('click', 'tr', (e) => getMeetAccessUrl(e.currentTarget));
     $('#new-room').on('show.bs.modal', function () {
         $('#room-name').val('');
     })
 
     function listRoom() {
-        doFetch(roomServiceAPI)
+        Util.doFetch(roomServiceAPI)
             .catch(err => console.error('Error ' + err))
             .then(data => {
                 Util.generateTabelHTML("grid-room", data, [editRoomTemplate, deleteRoomTemplate], function (column, value, parent) {
@@ -145,14 +147,14 @@
         if (!validator(room)) {
             return;
         }
-        doFetch(roomServiceAPI, {
+        Util.doFetch(roomServiceAPI, {
             method: 'POST', // or 'PUT'
             body: JSON.stringify({
                 room
             }),
-            headers: new Headers({
+            headers: {
                 'Content-Type': 'application/json'
-            })
+            }
         })
             .then(() => {
                 $('#new-room').modal('hide');
@@ -163,7 +165,7 @@
 
     function removeRoom(trEle) {
         let room = Util.getCurrentTrColumnValue(trEle, 'name');
-        doFetch(roomServiceAPI + '/' + room, { method: 'Delete' })
+        Util.doFetch(roomServiceAPI + '/' + room, { method: 'Delete' })
             .then(listRoom)
             .catch(err => alert('Error ' + err && err.message));
         return false;
@@ -172,8 +174,8 @@
     function removeToken(trEle) {
         let room = $('#room-detail-name').val();
         let token = Util.getCurrentTrColumnValue(trEle, 'token');
-        token = token.substring(token.length - 10); // only need to take last 10 charactors
-        doFetch(roomServiceAPI + '/' + room + '/token/' + token, { method: 'Delete' })
+        token = token.substring(token.length - 100); // only need to take last 20 charactors
+        Util.doFetch(roomServiceAPI + '/' + room + '/token/' + encodeURIComponent(token), { method: 'Delete' })
             .then(() => { loadRoomDetails(room); })
             .catch(err => alert('Error ' + err && err.message));
         return false;
@@ -183,7 +185,7 @@
         $('#room-detail-user').val('');
         $('#room-detail .alert.alert-primary').text('');
         $('#room-detail .alert.alert-primary').hide();
-        doFetch(roomServiceAPI + '/' + room)
+        Util.doFetch(roomServiceAPI + '/' + room)
             .then(data => {
                 currentRoomDetails = data;
                 $('#room-detail-name').val(data.name);
@@ -204,15 +206,15 @@
         if (!validator({ room, userName })) {
             return;
         }
-        doFetch(roomServiceAPI + '/' + room + '/generateToken', {
+        Util.doFetch(roomServiceAPI + '/' + room + '/generateToken', {
             method: 'POST',
             body: JSON.stringify({
                 user: userName,
                 expireTime
             }),
-            headers: new Headers({
+            headers: {
                 'Content-Type': 'application/json'
-            })
+            }
         })
             .then(data => {
                 loadRoomDetails(room);
@@ -240,27 +242,6 @@
             $('#room-detail .alert.alert-primary').show();
             copyTextToClipboard(roomUrl);
         }
-    }
-
-    function doFetch(url, options = {}) {
-        let handleErrors = function (response) {
-            if (!response.ok) {
-                // throw Error(response.statusText);
-                throw response
-            }
-            return response;
-        }
-        return new Promise((resolvd, reject) => {
-            fetch(url, options)
-                .then(response => {
-                    if (!response.ok) { throw response }
-                    return response.json();  //we only get here if there is no error
-                })
-                .then(resolvd)
-                .catch(err => {
-                    err.json().then(reject);
-                });
-        })
     }
 
     function validator(obj) {

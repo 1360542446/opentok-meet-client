@@ -59,5 +59,43 @@ window.Util = {
     truncateText: function (text, length) {
         length = length || 30;
         return text.length > length ? text.substring(0, length) + "..." : text;
+    },
+    checkAuth: function(){
+        Util.doFetch(Config.serviceBasicUrl + '/auth/health')
+        .catch(err => window.location.href = 'login.html');
+    },
+    doFetch(url, options = {}) {
+        let handleErrors = function (response) {
+            if (!response.ok) {
+                // throw Error(response.statusText);
+                throw response
+            }
+            return response;
+        }
+        if (options.headers) {
+            options.headers.Authorization = window.localStorage.getItem('authorization');
+        }
+        else {
+            options.headers = {
+                'Authorization': window.localStorage.getItem('authorization')
+            };
+        }
+        $('#loading').show();
+        return new Promise((resolvd, reject) => {
+            fetch(url, options)
+                .then(response => {
+                    $('#loading').hide();
+                    if (!response.ok) { throw response }
+                    return response.json();  //we only get here if there is no error
+                })
+                .then(resolvd)
+                .catch(err => {
+                    $('#loading').hide();
+                    if(err.status === 401 ||err.status === 500){
+                        reject(err);
+                    }
+                    err.json().then(reject);
+                });
+        })
     }
 }

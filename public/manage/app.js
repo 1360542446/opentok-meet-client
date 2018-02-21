@@ -1,5 +1,6 @@
 let Config = {
-    serviceBasicUrl: 'https://13.115.205.215/api/'
+    // serviceBasicUrl: 'https://n5mg79xrk3.execute-api.ap-northeast-1.amazonaws.com/prod/api/'
+    serviceBasicUrl: 'http://localhost:3000/api/'
 }
 
 document.querySelector('#menu-bar ul>li').addEventListener('click', function(){
