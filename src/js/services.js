@@ -11,12 +11,31 @@ angular.module('opentok-meet').factory('RoomService', ['$http', 'baseURL', '$win
         return new Promise((resolved, reject) => {
           try {
             let roomData = {};
-            roomData.p2p = false;
-            roomData.room = getQueryVariable('room');
-            roomData.apiKey = getQueryVariable('apiKey');
-            roomData.sessionId = getQueryVariable('sessionId');
-            roomData.token = getQueryVariable('token');
-            resolved(roomData);
+
+            $.ajax({
+              url: 'http://localhost:3000/user/room',
+              type: 'post',
+              headers:{
+                'content-type': 'application/x-www-form-urlencoded',
+                'Authorization':window.localStorage.getItem('authorization')
+              },
+              contentType: 'application/json',
+              data: {
+                'room': window.localStorage.getItem('room'),
+                'username':window.localStorage.getItem('username')
+              },
+              dataType: 'json'
+            }).done(function (e) {
+              roomData.p2p = false;
+              roomData.room = e.room;
+              roomData.apiKey = e.apiKey;
+              roomData.sessionId = e.sessionId;
+              roomData.token = e.token;
+              resolved(roomData);
+            }).fail(function (e) {
+              // window.location.href = './loginUser.html';
+              console.error(e);
+            });
           }
           catch (e) {
             reject(e);

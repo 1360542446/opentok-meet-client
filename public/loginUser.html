@@ -156,7 +156,7 @@
             var username = $('input[name="username"]').val();
             var password = $('input[name="password"]').val();
             $.ajax({
-                url: 'http://localhost:3000/api/auth/user/login',
+                url: 'http://localhost:3000/user/login',
                 type: 'post',
                 data: JSON.stringify({
                     room,
@@ -166,12 +166,9 @@
                 contentType: 'application/json',
                 dataType: 'json'
             }).done(function (e) {
-                window.localStorage.setItem('authorization', e.token);
+                window.localStorage.setItem('authorization', e.authorization);
                 window.localStorage.setItem('room', e.room);
-                window.localStorage.setItem('apiKey', e.apiKey);
-                window.localStorage.setItem('sessionId', e.sessionId);
-                window.localStorage.setItem('token', e.token);
-
+                window.localStorage.setItem('username',e.username);
                 window.location.href = 'room.html';
             }).fail(function (e) {
                 $('div.error-message').html(JSON.parse(e.responseText).message);
